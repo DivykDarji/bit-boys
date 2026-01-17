@@ -1,10 +1,6 @@
-Here is your **ready-to-use `README.md` file content** for **Pehchaan**.
-Just copy everything below and paste it into `README.md`.
-
----
 
 ```md
-# 🆔 Pehchaan — Privacy-First Digital Identity Platform
+#  Pehchaan — Privacy-First Digital Identity Platform
 
 Pehchaan is a privacy-centric digital identity wallet that enables users to securely manage and selectively share their personal identity data with third-party services such as hospitals, city portals, and government services using explicit consent and biometric verification.
 
