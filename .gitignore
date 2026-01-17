@@ -1,0 +1,64 @@
+# =========================
+# Environment Files
+# =========================
+.env
+.env.local
+.env.development
+.env.production
+
+# =========================
+# Node (Frontend + Backend)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build folders
+dist/
+build/
+
+# =========================
+# Python (Biometric Service)
+# =========================
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================
+# Biometric Data (IMPORTANT)
+# =========================
+biometric-service/uploads/
+biometric-service/temp/
+biometric-service/faces/
+biometric-service/embeddings/
+
+# Prevent accidental model upload
+biometric-service/models/*.h5
+biometric-service/models/*.onnx
+
+# =========================
+# OS Generated Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor Files
+# =========================
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Cache
+# =========================
+.cache/
