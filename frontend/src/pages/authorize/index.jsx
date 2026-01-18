@@ -1,14 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { authorizeStyles } from "./style";
 
 const Authorize = () => {
 
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-
-  const [authToken, setAuthToken] = useState(null);
-  const [cameraOn, setCameraOn] = useState(false);
-  const [cameraStream, setCameraStream] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -16,6 +10,7 @@ const Authorize = () => {
 
   const scope = params.get("scope");
   const redirectUri = params.get("redirectUri");
+  const clientId = params.get("clientId");
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token;
@@ -24,7 +19,7 @@ const Authorize = () => {
 
   useEffect(() => {
 
-    if (!scope || !redirectUri) {
+    if (!scope || !redirectUri || !clientId) {
       setError("Invalid authorization request");
       return;
     }
@@ -34,115 +29,42 @@ const Authorize = () => {
       return;
     }
 
-  }, [scope, redirectUri, token]);
+  }, [scope, redirectUri, clientId, token]);
 
-  // ================= ATTACH CAMERA STREAM SAFELY =================
-
-  useEffect(() => {
-
-    if (cameraOn && cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play();
-    }
-
-  }, [cameraOn, cameraStream]);
-
-  // ================= CLEANUP CAMERA ON UNMOUNT =================
-
-  useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [cameraStream]);
-
-  // ================= START CONSENT =================
+  // ================= START AUTH REQUEST =================
 
   const startConsent = async () => {
-  try {
-
-    const res = await fetch(
-      `http://localhost:5000/api/identity/authorize?scope=${scope}&redirectUri=${redirectUri}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.message || "Authorization blocked");
-      return;
-    }
-
-    setAuthToken(data.authToken);
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" }
-    });
-
-    setCameraStream(stream);
-    setCameraOn(true);
-
-  } catch (err) {
-    console.error(err);
-    setError("Authorization failed");
-  }
-};
-
-  // ================= VERIFY FACE =================
-
-  const verifyIdentity = async () => {
-
-    if (!authToken) return;
-
-    setLoading(true);
-    setError("");
 
     try {
 
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-
-      ctx.drawImage(videoRef.current, 0, 0);
-
-      const imageBase64 = canvas
-        .toDataURL("image/jpeg")
-        .replace("data:image/jpeg;base64,", "");
+      setLoading(true);
+      setError("");
 
       const res = await fetch(
-        "http://localhost:5000/api/identity/authorize/approve",
+        `http://localhost:5000/api/identity/authorize?scope=${scope}&redirectUri=${redirectUri}&clientId=${clientId}`,
         {
-          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            authToken,
-            imageBase64,
-          }),
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok || !data.redirect) {
-        throw new Error("Verification failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Authorization blocked");
       }
 
-      // Safe redirect
-      window.location.replace(data.redirect);
+      // Save auth session token
+      localStorage.setItem("pendingAuth", data.authToken);
+
+      // 👉 Redirect user to dashboard to approve consent
+      window.location.href =
+        `http://localhost:5173/dashboard?scope=${scope}&clientId=${clientId}`;
 
     } catch (err) {
       console.error(err);
-      setError("Face verification failed. Please try again.");
+      setError(err.message || "Authorization failed");
     } finally {
       setLoading(false);
     }
@@ -159,36 +81,18 @@ const Authorize = () => {
         </h2>
 
         <p style={authorizeStyles.text}>
-          This application wants permission to access your verified identity
-          information from Pehchaan.
+          {clientId} is requesting access to your identity data.
+          You will review and approve this request on your dashboard.
         </p>
 
-        {!cameraOn && !error && (
-          <button onClick={startConsent} style={authorizeStyles.button}>
-            Approve & Continue
+        {!error && (
+          <button
+            onClick={startConsent}
+            disabled={loading}
+            style={authorizeStyles.button}
+          >
+            {loading ? "Creating Request..." : "Continue"}
           </button>
-        )}
-
-        {cameraOn && (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={authorizeStyles.video}
-            />
-
-            <canvas ref={canvasRef} hidden />
-
-            <button
-              onClick={verifyIdentity}
-              disabled={loading}
-              style={authorizeStyles.button}
-            >
-              {loading ? "Verifying..." : "Verify Face & Sign In"}
-            </button>
-          </>
         )}
 
         {error && <p style={authorizeStyles.error}>{error}</p>}

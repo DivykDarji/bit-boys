@@ -1,77 +1,155 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useRef, useEffect, useState } from "react";
 import { cityStyles } from "./cityStyles";
 
 const ProviderCity = () => {
-  const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  const startLink = () => {
-    navigate("/authorize?scope=city&redirectUri=/dashboard");
+  const [stream, setStream] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const authToken = localStorage.getItem("pendingAuth");
+  const isExternalFlow = !!authToken;
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = user?.token;
+
+  /* ================= CAMERA INIT ================= */
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((media) => {
+        setStream(media);
+        videoRef.current.srcObject = media;
+        videoRef.current.play();
+      })
+      .catch(() => {
+        setError("Camera permission denied");
+      });
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
+
+  /* ================= VERIFY FACE ================= */
+
+  const verifyFace = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+
+      ctx.drawImage(videoRef.current, 0, 0);
+
+      const imageBase64 = canvas
+        .toDataURL("image/jpeg")
+        .replace("data:image/jpeg;base64,", "");
+
+      // ================= EXTERNAL FLOW =================
+
+      if (isExternalFlow) {
+        const res = await fetch(
+          "http://localhost:5000/api/identity/authorize/approve",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              authToken,
+              imageBase64,
+            }),
+          },
+        );
+
+        const data = await res.json();
+
+        if (!res.ok || !data.redirect) throw new Error();
+
+        localStorage.removeItem("pendingAuth");
+
+        window.location.replace(data.redirect);
+        return;
+      }
+
+      // ================= INTERNAL FLOW =================
+
+      const res = await fetch(
+        "http://localhost:5000/api/identity/internal/verify",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imageBase64,
+            scope: "city",
+          }),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) throw new Error();
+
+      window.location.href = "/dashboard";
+    } catch {
+      setError("Face verification failed");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  /* ================= UI ================= */
 
   return (
     <div style={cityStyles.cityHeroSection}>
       <div style={cityStyles.cityContent}>
         <span style={cityStyles.cityBadge}>Smart City Authority</span>
-        
-        <h1 style={cityStyles.cityTitle}>
-          Verify Identity
-        </h1>
-        
+
+        <h1 style={cityStyles.cityTitle}>Verify Your Identity</h1>
+
         <p style={cityStyles.cityDescription}>
-          Verify identity to link resident address.
+          Verify your face to complete resident authorization.
         </p>
 
-        <div style={cityStyles.cityBenefits}>
-          <div style={cityStyles.benefitItem}>
-            <div style={cityStyles.benefitIcon}>✓</div>
-            <span style={cityStyles.benefitText}>
-              Secure face recognition verification
-            </span>
-          </div>
-          <div style={cityStyles.benefitItem}>
-            <div style={cityStyles.benefitIcon}>✓</div>
-            <span style={cityStyles.benefitText}>
-              Link your official resident records
-            </span>
-          </div>
-          <div style={cityStyles.benefitItem}>
-            <div style={cityStyles.benefitIcon}>✓</div>
-            <span style={cityStyles.benefitText}>
-              Instant verification within minutes
-            </span>
-          </div>
-        </div>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{
+            width: "100%",
+            borderRadius: 12,
+            marginTop: 12,
+          }}
+        />
+
+        <canvas ref={canvasRef} hidden />
 
         <div style={cityStyles.cityButtons}>
           <button
-            onClick={startLink}
+            onClick={verifyFace}
+            disabled={loading}
             style={cityStyles.primaryBtn}
-            onMouseEnter={(e) => 
-              Object.assign(e.target.style, cityStyles.primaryBtnHover)
-            }
-            onMouseLeave={(e) => 
-              Object.assign(e.target.style, {
-                backgroundColor: "#8a9a5b",
-                boxShadow: "0 4px 15px rgba(138,154,91,.3)",
-                transform: "none"
-              })
-            }
           >
-            Start Face Verification
+            {loading ? "Verifying..." : "Verify Face"}
           </button>
         </div>
-      </div>
 
-      <div style={cityStyles.cityImage}>
-        <div style={cityStyles.cityIllustration}>
-          <div style={{ textAlign: "center", color: "#8a9a5b" }}>
-            <div style={{ fontSize: "64px", marginBottom: "16px" }}>🏛️</div>
-            <p style={{ margin: 0, fontSize: "16px", fontWeight: 600 }}>
-              City Authority Verification
-            </p>
-          </div>
-        </div>
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
     </div>
   );

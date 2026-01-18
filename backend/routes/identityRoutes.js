@@ -1,38 +1,45 @@
-  const router = require("express").Router();
-  const upload = require("../middleware/upload");
-  const ctrl = require("../controllers/identityController");
-  const verify = require("../middleware/verifyToken");
+const router = require("express").Router();
+const upload = require("../middleware/upload");
+const ctrl = require("../controllers/identityController");
+const verify = require("../middleware/verifyToken");
 
-  router.get("/wallet", verify, ctrl.getWallet);
+// Register user with 3 face images
+router.post("/register-face", upload.array("images", 3), ctrl.registerWithFace);
 
-  // Register user with 3 face images
-  router.post("/register-face", upload.array("images", 3), ctrl.registerWithFace);
+router.post("/send-otp", ctrl.sendOTP);
 
-  router.post("/send-otp", ctrl.sendOTP);
+router.post("/forgot-password", ctrl.forgotPassword);
+router.post("/reset-password", ctrl.resetPassword);
 
-  router.post("/forgot-password", ctrl.forgotPassword);
-  router.post("/reset-password", ctrl.resetPassword);
+router.post("/login", ctrl.loginUser);
 
-  router.post("/login", ctrl.loginUser);
+router.post("/verify-otp", ctrl.verifyOTP);
 
-  router.post("/verify-otp", ctrl.verifyOTP);
+router.post("/internal/verify", verify, ctrl.internalVerify);
 
-  // Verify face
-  router.post("/verify-face", ctrl.verifyFace);
+// Verify face
+router.post("/verify-face", ctrl.verifyFace);
 
-  // Wallet
-  router.get("/wallet", verify, ctrl.getWallet);
+// Wallet
+router.get("/wallet", verify, ctrl.getWallet);
 
-  // ===== Sign In With Pehchaan =====
+router.post("/consent/save", verify, ctrl.saveConsent);
 
-  router.get("/authorize", verify, ctrl.startAuthorization);
+router.post("/consent/revoke", verify, ctrl.revokeConsent);
 
-  router.post("/authorize/approve", verify, ctrl.approveAuthorization);
+// ===== Sign In With Pehchaan =====
 
-  router.get("/authorize/profile", verify, ctrl.getAuthorizedProfile);
+router.get("/authorize", verify, ctrl.startAuthorization);
 
-  router.get("/profile", verify, ctrl.getProfile);
+router.post("/authorize/approve", verify, ctrl.approveAuthorization);
 
-  router.post("/profile", verify, ctrl.saveProfile);
+router.get("/authorize/profile", verify, ctrl.getAuthorizedProfile);
 
-  module.exports = router;
+router.get("/profile", verify, ctrl.getProfile);
+
+router.post("/profile", verify, ctrl.saveProfile);
+router.post("/internal/verify", verify, ctrl.internalVerify);
+router.post("/authorize/approve", verify, ctrl.approveAuthorization);
+
+
+module.exports = router;

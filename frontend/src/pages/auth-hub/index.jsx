@@ -47,8 +47,10 @@ const AuthHub = () => {
       alert("Please select a service to continue");
       return;
     }
+    const clientId = "CityCare"; // example portal name
 
-    window.location.href = `http://localhost:5173/authorize?scope=${finalScope}&redirectUri=${redirectUri}`;
+    window.location.href = `http://localhost:5173/authorize?scope=${finalScope}&redirectUri=${redirectUri}&clientId=${clientId}`;
+
   };
 
   return (

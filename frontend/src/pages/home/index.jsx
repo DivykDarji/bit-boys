@@ -65,6 +65,7 @@ const SectorCard = ({
   bgColor,
   textColor,
   icon,
+  children,
 }) => (
   <div style={dashboardStyles.sectorCard}>
     <div
@@ -114,6 +115,7 @@ const SectorCard = ({
           {actionLabel}
         </button>
       )}
+      {children}
     </div>
   </div>
 );
@@ -128,9 +130,23 @@ const Home = () => {
     health: { linked: false, verified: false },
     farm: { linked: false, verified: false },
     city: { linked: false, verified: false },
+    activeConsents: [],
   });
 
   const [loading, setLoading] = useState(true);
+
+  const params = new URLSearchParams(window.location.search);
+  const pendingScope = params.get("scope");
+  const clientId = params.get("clientId");
+
+  const [pendingAuth, setPendingAuth] = useState(null);
+
+  useEffect(() => {
+    const auth = localStorage.getItem("pendingAuth");
+      setPendingAuth(auth);
+  }, []);
+
+  const [duration, setDuration] = useState("10m");
 
   /* ================= LOAD WALLET ================= */
 
@@ -169,7 +185,11 @@ const Home = () => {
     navigate("/login");
   };
 
-  if (loading) {
+  const getActiveConsent = (scope) => {
+    return wallet.activeConsents?.find((c) => c.allowedScopes.includes(scope));
+  };
+
+  if (loading && !pendingAuth) {
     return <div style={{ padding: 80 }}>Loading identity wallet...</div>;
   }
 
@@ -187,6 +207,86 @@ const Home = () => {
 
       <main style={dashboardStyles.wrapper}>
         <div style={dashboardStyles.applicationSection}>
+          {pendingAuth && pendingScope && (
+            <div
+              style={{
+                padding: 20,
+                background: "#fff3cd",
+                borderRadius: 14,
+                marginBottom: 30,
+                boxShadow: "0 6px 18px rgba(0,0,0,.08)",
+              }}
+            >
+              <h3>{clientId || "External App"} wants access</h3>
+
+              <p style={{ marginTop: 8 }}>
+                Requested data:
+                <strong> {pendingScope.toUpperCase()}</strong>
+              </p>
+
+              <div style={{ marginTop: 12 }}>
+                <label>
+                  <input
+                    type="radio"
+                    name="time"
+                    value="10m"
+                    checked={duration === "10m"}
+                    onChange={() => setDuration("10m")}
+                  />{" "}
+                  10 minutes
+                </label>
+
+                <br />
+
+                <label>
+                  <input
+                    type="radio"
+                    name="time"
+                    value="forever"
+                    checked={duration === "forever"}
+                    onChange={() => setDuration("forever")}
+                  />{" "}
+                  Until revoke
+                </label>
+              </div>
+
+              <button
+                style={{
+                  marginTop: 16,
+                  padding: "10px 18px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: "#111",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+                onClick={async () => {
+                  const token = JSON.parse(localStorage.getItem("user")).token;
+
+                  await fetch(
+                    "http://localhost:5000/api/identity/consent/save",
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        authToken: pendingAuth,
+                        duration,
+                      }),
+                    },
+                  );
+
+                  navigate(`/provider-auth/${pendingScope}`);
+                }}
+              >
+                Approve Access
+              </button>
+            </div>
+          )}
+
           {!wallet.profileCompleted && (
             <button
               onClick={() => navigate("/profile")}
@@ -270,7 +370,50 @@ const Home = () => {
               bgColor={colors.sage}
               textColor="#ffffff"
               icon={<HealthIcon />}
-            />
+            >
+              {/* 👇 ACTIVE CONSENT UI GOES HERE */}
+
+              {getActiveConsent("health") && (
+                <p style={{ fontSize: 13, marginTop: 10 }}>
+                  Access granted to:
+                  <strong> {getActiveConsent("health").clientId}</strong>
+                  <br />
+                  <button
+                    onClick={async () => {
+                      const token = JSON.parse(
+                        localStorage.getItem("user"),
+                      ).token;
+
+                      await fetch(
+                        "http://localhost:5000/api/identity/consent/revoke",
+                        {
+                          method: "POST",
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            consentId: getActiveConsent("health")._id,
+                          }),
+                        },
+                      );
+
+                      window.location.reload();
+                    }}
+                    style={{
+                      marginTop: 6,
+                      background: "none",
+                      border: "none",
+                      color: "#d9534f",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Revoke Access
+                  </button>
+                </p>
+              )}
+            </SectorCard>
 
             {/* FARM */}
             <SectorCard
@@ -300,7 +443,50 @@ const Home = () => {
               bgColor={colors.wood}
               textColor={colors.charcoal}
               icon={<AgricultureIcon />}
-            />
+            >
+              {/* 👇 FARM ACTIVE CONSENT */}
+
+              {getActiveConsent("farm") && (
+                <p style={{ fontSize: 13, marginTop: 10 }}>
+                  Access granted to:
+                  <strong> {getActiveConsent("farm").clientId}</strong>
+                  <br />
+                  <button
+                    onClick={async () => {
+                      const token = JSON.parse(
+                        localStorage.getItem("user"),
+                      ).token;
+
+                      await fetch(
+                        "http://localhost:5000/api/identity/consent/revoke",
+                        {
+                          method: "POST",
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            consentId: getActiveConsent("farm")._id,
+                          }),
+                        },
+                      );
+
+                      window.location.reload();
+                    }}
+                    style={{
+                      marginTop: 6,
+                      background: "none",
+                      border: "none",
+                      color: "#d9534f",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Revoke Access
+                  </button>
+                </p>
+              )}
+            </SectorCard>
 
             {/* CITY */}
             <SectorCard
@@ -330,7 +516,50 @@ const Home = () => {
               bgColor={colors.charcoal}
               textColor={colors.yellow}
               icon={<CityIcon />}
-            />
+            >
+              {/* 👇 CITY ACTIVE CONSENT */}
+
+              {getActiveConsent("city") && (
+                <p style={{ fontSize: 13, marginTop: 10 }}>
+                  Access granted to:
+                  <strong> {getActiveConsent("city").clientId}</strong>
+                  <br />
+                  <button
+                    onClick={async () => {
+                      const token = JSON.parse(
+                        localStorage.getItem("user"),
+                      ).token;
+
+                      await fetch(
+                        "http://localhost:5000/api/identity/consent/revoke",
+                        {
+                          method: "POST",
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            consentId: getActiveConsent("city")._id,
+                          }),
+                        },
+                      );
+
+                      window.location.reload();
+                    }}
+                    style={{
+                      marginTop: 6,
+                      background: "none",
+                      border: "none",
+                      color: "#d9534f",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Revoke Access
+                  </button>
+                </p>
+              )}
+            </SectorCard>
           </div>
         </div>
       </main>
