@@ -338,56 +338,72 @@ exports.startAuthorization = async (req, res) => {
 // STEP 2 — CONSENT + FACE VERIFY
 
 exports.approveAuthorization = async (req, res) => {
-  const { authToken, imageBase64 } = req.body;
+  try {
 
-  const session = authSessions.get(authToken);
+    const { authToken, frames } = req.body;
 
-  if (!session || session.expiresAt < Date.now()) {
-    return res.status(400).json({ message: "Session expired" });
+    const session = authSessions.get(authToken);
+
+    if (!session || session.expiresAt < Date.now()) {
+      return res.status(400).json({ message: "Session expired" });
+    }
+
+    const user = await User.findById(session.userId);
+
+    if (!user || !user.faceEnrolled) {
+      return res.status(400).json({ message: "User not face enrolled" });
+    }
+
+    // ✅ Multi-frame biometric verification
+    const result = await biometric.verifyFace(
+      user.faceEmbedding,
+      frames
+    );
+
+    if (!result.success) {
+      return res.status(401).json({ message: "Face verification failed" });
+    }
+
+    // ✅ MARK VERIFIED BASED ON SCOPE
+
+    if (session.scope === "health") {
+      user.profile.health.verified = true;
+    }
+
+    if (session.scope === "farm") {
+      user.profile.farm.verified = true;
+    }
+
+    if (session.scope === "city") {
+      user.profile.city.verified = true;
+    }
+
+    // Upgrade trust level
+    user.trustLevel = "Verified";
+
+    await user.save();
+
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+        scope: session.scope,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "10m" },
+    );
+
+    authSessions.delete(authToken);
+
+    res.json({
+      redirect: `${session.redirectUri}?token=${accessToken}`,
+    });
+
+  } catch (err) {
+    console.error("Authorization approve error:", err);
+    res.status(500).json({ message: "Authorization failed" });
   }
-
-  const user = await User.findById(session.userId);
-
-  const result = await biometric.verifyFace(user.faceEmbedding, imageBase64);
-
-  if (!result.match) {
-    return res.status(401).json({ message: "Face failed" });
-  }
-
-  // ✅ MARK VERIFIED BASED ON SCOPE
-
-  if (session.scope === "health") {
-    user.profile.health.verified = true;
-  }
-
-  if (session.scope === "farm") {
-    user.profile.farm.verified = true;
-  }
-
-  if (session.scope === "city") {
-    user.profile.city.verified = true;
-  }
-
-  // Upgrade trust level
-  user.trustLevel = "Verified";
-
-  await user.save();
-
-  const accessToken = jwt.sign(
-    {
-      userId: user._id,
-      scope: session.scope,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "10m" },
-  );
-
-  authSessions.delete(authToken);
-
-  res.json({
-    redirect: `${session.redirectUri}?token=${accessToken}`,
-  });
 };
+
 
 // STEP 3 — SCOPED DATA
 
@@ -592,7 +608,7 @@ exports.internalVerify = async (req, res) => {
 
   try {
 
-    const { imageBase64, scope } = req.body;
+    const { frames, scope } = req.body;
 
     const user = await User.findById(req.user.userId);
 
@@ -602,14 +618,14 @@ exports.internalVerify = async (req, res) => {
 
     const result = await biometric.verifyFace(
       user.faceEmbedding,
-      imageBase64
+      frames
     );
 
-    if (!result.match) {
+    if (!result.success) {
       return res.status(401).json({ success: false });
     }
 
-    // Mark verified internally
+    // Mark verified
     if (scope === "health") user.profile.health.verified = true;
     if (scope === "farm") user.profile.farm.verified = true;
     if (scope === "city") user.profile.city.verified = true;
@@ -625,6 +641,7 @@ exports.internalVerify = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
+
 
 exports.deleteIdentity = async (req, res) => {
   try {

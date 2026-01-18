@@ -44,7 +44,7 @@ exports.enrollFace = async (userId, name, files) => {
 
 
 
-exports.verifyFace = async (embedding, imageBase64) => {
+exports.verifyFace = async (embedding, frames) => {
 
   try {
 
@@ -52,13 +52,21 @@ exports.verifyFace = async (embedding, imageBase64) => {
       `${BIOMETRIC_URL}/verify-face`,
       {
         embedding,
-        image: imageBase64
+        frames
+      },
+      {
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
       }
     );
 
     return response.data;
 
-  } catch {
+  } catch (error) {
+
+    console.error("Biometric verify error:",
+      error.response?.data || error.message
+    );
 
     throw {
       status: 500,
@@ -66,3 +74,4 @@ exports.verifyFace = async (embedding, imageBase64) => {
     };
   }
 };
+

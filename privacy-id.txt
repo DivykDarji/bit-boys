@@ -1063,3 +1063,5 @@ add feilds for health card then health only farmer then farmenr and city then ci
 also 
 
 if not verfieid then in auth it should show face not verified make sure you verify it first and then it shild authorize
+
+"Our anti-spoof CNN was trained on controlled datasets, while our demo runs on webcam input. To handle domain mismatch, we apply adaptive thresholding and combine it with frontend liveness detection and multi-frame voting."
