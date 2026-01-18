@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authSessions = new Map();
 const Consent = require("../models/Consent");
+const path = require("path");
 
 exports.sendOTP = async (req, res) => {
   const { name, email, gender, password } = req.body;
@@ -624,3 +625,66 @@ exports.internalVerify = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
+
+exports.deleteIdentity = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false });
+    }
+
+    // 1️⃣ Revoke consents
+    await Consent.updateMany(
+      { userId, status: "active" },
+      { status: "revoked" }
+    );
+
+    // 2️⃣ Correct biometric storage base path
+    const BASE_STORAGE = process.env.BIOMETRIC_STORAGE_PATH;
+
+    // 3️⃣ Delete face images
+    if (user.faceImages?.length) {
+      user.faceImages.forEach((relativePath) => {
+
+        const cleanPath = relativePath.replace(/^\/+/, "");
+
+        const fullPath = path.join(BASE_STORAGE, cleanPath);
+
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+
+      });
+
+      // 4️⃣ Delete entire user folder
+      const folderName = user.faceImages[0]
+        .replace(/^\/+/, "")
+        .split("/")[0];
+
+      const userFolder = path.join(BASE_STORAGE, folderName);
+
+      if (fs.existsSync(userFolder)) {
+        fs.rmSync(userFolder, { recursive: true, force: true });
+      }
+    }
+
+    // 5️⃣ Delete user from DB
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      success: true,
+      message: "Identity permanently deleted",
+    });
+
+  } catch (err) {
+    console.error("Delete identity error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Identity deletion failed",
+    });
+  }
+};
+

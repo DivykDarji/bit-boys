@@ -150,6 +150,7 @@ export const styles = {
     borderRadius: "12px",
     fontWeight: 700,
     cursor: "pointer",
+    padding: "8px 16px",
     marginTop: "0.5rem",
   },
 
@@ -193,5 +194,16 @@ export const styles = {
     fontWeight: 600,
     cursor: "pointer",
   },
+  
+cameraButtonRow: {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "14px",
+  marginTop: "16px",
+  padding: "8px 0",
+},
+
+
 };
 

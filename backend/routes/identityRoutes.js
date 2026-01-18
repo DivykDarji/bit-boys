@@ -41,5 +41,6 @@ router.post("/profile", verify, ctrl.saveProfile);
 router.post("/internal/verify", verify, ctrl.internalVerify);
 router.post("/authorize/approve", verify, ctrl.approveAuthorization);
 
+router.delete("/delete-identity", verify, ctrl.deleteIdentity);
 
 module.exports = router;

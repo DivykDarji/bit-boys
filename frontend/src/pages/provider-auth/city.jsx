@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { cityStyles } from "./cityStyles";
+import { cityStyles as styles } from "./cityStyles";
 
 const ProviderCity = () => {
   const videoRef = useRef(null);
@@ -55,7 +55,7 @@ const ProviderCity = () => {
         .toDataURL("image/jpeg")
         .replace("data:image/jpeg;base64,", "");
 
-      // ================= EXTERNAL FLOW =================
+      /* ========== EXTERNAL FLOW ========== */
 
       if (isExternalFlow) {
         const res = await fetch(
@@ -70,7 +70,7 @@ const ProviderCity = () => {
               authToken,
               imageBase64,
             }),
-          },
+          }
         );
 
         const data = await res.json();
@@ -78,12 +78,11 @@ const ProviderCity = () => {
         if (!res.ok || !data.redirect) throw new Error();
 
         localStorage.removeItem("pendingAuth");
-
         window.location.replace(data.redirect);
         return;
       }
 
-      // ================= INTERNAL FLOW =================
+      /* ========== INTERNAL FLOW ========== */
 
       const res = await fetch(
         "http://localhost:5000/api/identity/internal/verify",
@@ -97,7 +96,7 @@ const ProviderCity = () => {
             imageBase64,
             scope: "city",
           }),
-        },
+        }
       );
 
       const data = await res.json();
@@ -115,39 +114,34 @@ const ProviderCity = () => {
   /* ================= UI ================= */
 
   return (
-    <div style={cityStyles.cityHeroSection}>
-      <div style={cityStyles.cityContent}>
-        <span style={cityStyles.cityBadge}>Smart City Authority</span>
+    <div style={styles.container}>
+      <div style={styles.card}>
 
-        <h1 style={cityStyles.cityTitle}>Verify Your Identity</h1>
 
-        <p style={cityStyles.cityDescription}>
-          Verify your face to complete resident authorization.
-        </p>
+        <div style={styles.header}>
+          <h2 style={styles.title}>Smart City Authority</h2>
+          <p style={styles.subtitle}>
+            Verify your face to complete resident authorization
+          </p>
+        </div>
 
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          style={{
-            width: "100%",
-            borderRadius: 12,
-            marginTop: 12,
-          }}
+          style={{ width: "100%", borderRadius: 10 }}
         />
 
         <canvas ref={canvasRef} hidden />
 
-        <div style={cityStyles.cityButtons}>
-          <button
-            onClick={verifyFace}
-            disabled={loading}
-            style={cityStyles.primaryBtn}
-          >
-            {loading ? "Verifying..." : "Verify Face"}
-          </button>
-        </div>
+        <button
+          style={styles.startBtn}
+          onClick={verifyFace}
+          disabled={loading}
+        >
+          {loading ? "Verifying..." : "Verify Face"}
+        </button>
 
         {error && <p style={{ color: "red" }}>{error}</p>}
       </div>

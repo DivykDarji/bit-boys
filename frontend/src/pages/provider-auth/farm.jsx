@@ -117,7 +117,7 @@ const ProviderFarm = () => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <div style={styles.farmIcon}>🌾</div>
+        
 
         <div style={styles.header}>
           <h2 style={styles.title}>National Agriculture Registry</h2>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, layout, headerStyles, dashboardStyles } from "./style";
+import Swal from "sweetalert2";
 
 /* ================= ICONS ================= */
 
@@ -143,7 +144,7 @@ const Home = () => {
 
   useEffect(() => {
     const auth = localStorage.getItem("pendingAuth");
-      setPendingAuth(auth);
+    setPendingAuth(auth);
   }, []);
 
   const [duration, setDuration] = useState("10m");
@@ -185,6 +186,54 @@ const Home = () => {
     navigate("/login");
   };
 
+  const handleDeleteIdentity = async () => {
+    const confirm = await Swal.fire({
+      title: "Delete Digital Identity?",
+      text: "Your biometric data, profile and consents will be permanently erased. This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d9534f",
+      cancelButtonColor: "#555",
+      confirmButtonText: "Yes, Delete My Identity",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = JSON.parse(localStorage.getItem("user")).token;
+
+      const res = await fetch(
+        "http://localhost:5000/api/identity/delete-identity",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error("Delete failed");
+      }
+
+      await Swal.fire(
+        "Identity Deleted",
+        "Your digital identity has been permanently removed.",
+        "success",
+      );
+
+      // ✅ Clear session
+      localStorage.removeItem("user");
+
+      // ✅ Redirect to login
+      navigate("/login");
+    } catch (err) {
+      Swal.fire("Error", "Failed to delete identity", "error");
+    }
+  };
+
   const getActiveConsent = (scope) => {
     return wallet.activeConsents?.find((c) => c.allowedScopes.includes(scope));
   };
@@ -200,9 +249,18 @@ const Home = () => {
       <header style={headerStyles.container}>
         <h1 style={headerStyles.title}>Pehchaan</h1>
 
-        <button onClick={handleLogout} style={headerStyles.logoutButton}>
-          🚪 Logout
-        </button>
+        <div style={headerStyles.actionGroup}>
+          <button onClick={handleLogout} style={headerStyles.logoutButton}>
+            Logout
+          </button>
+
+          <button
+            onClick={handleDeleteIdentity}
+            style={headerStyles.deleteButton}
+          >
+            Delete
+          </button>
+        </div>
       </header>
 
       <main style={dashboardStyles.wrapper}>
@@ -211,7 +269,7 @@ const Home = () => {
             <div
               style={{
                 padding: 20,
-                background: "#fff3cd",
+                background: "#cccccc",
                 borderRadius: 14,
                 marginBottom: 30,
                 boxShadow: "0 6px 18px rgba(0,0,0,.08)",

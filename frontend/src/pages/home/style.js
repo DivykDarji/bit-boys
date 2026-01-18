@@ -29,54 +29,56 @@ export const layout = {
 
 export const headerStyles = {
   container: {
-    padding: "28px 48px",
+    padding: "22px 48px",
     borderBottom: `1px solid ${colors.border}`,
     backgroundColor: "#ffffff",
+
     display: "flex",
-    justifyContent: "center",
     alignItems: "center",
-    position: "relative",
+    justifyContent: "space-between",
   },
 
   title: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: 900,
-    letterSpacing: "-0.04em",
-    textTransform: "capitalize",
+    letterSpacing: "-0.03em",
+    color: colors.charcoal,
+  },
+
+  actionGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
   },
 
   logoutButton: {
-    position: "absolute",
-    right: 48,
+    padding: "8px 14px",
+    borderRadius: 10,
 
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-
-    padding: "10px 18px",
-    borderRadius: "999px",
     border: "none",
+    background: colors.red,
 
-    background: "linear-gradient(135deg, #d9534f, #c0392b)",
     color: "#ffffff",
-
-    fontSize: "14px",
-    fontWeight: "700",
-    letterSpacing: "0.4px",
+    fontSize: 13,
+    fontWeight: 700,
 
     cursor: "pointer",
-
-    boxShadow: "0 10px 24px rgba(217,83,79,0.35)",
-    transition: "all 0.25s ease",
+    transition: "0.2s ease",
   },
 
-  logoutHover: {
-    transform: "translateY(-2px)",
-    boxShadow: "0 14px 30px rgba(217,83,79,0.45)",
-  },
+  deleteButton: {
+    padding: "8px 14px",
+    borderRadius: 10,
 
-  logoutActive: {
-    transform: "scale(0.96)",
+    border: `1px solid ${colors.red}`,
+    background: "#ffffff",
+
+    color: colors.red,
+    fontSize: 13,
+    fontWeight: 700,
+
+    cursor: "pointer",
+    transition: "0.2s ease",
   },
 };
 
