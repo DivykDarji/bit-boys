@@ -213,7 +213,7 @@ export default function LandingPage() {
       {/* ================= FOOTER ================= */}
       <footer style={styles.footer}>
         <div style={styles.footerContent}>
-          <div style={styles.footerLogo}>Pehchaan</div>
+          <div style={styles.footerLogo}></div>
 
           <div style={styles.footerLinks}>
             {["Privacy", "Terms", "Security", "Contact"].map((link) => (

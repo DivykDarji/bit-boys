@@ -7,6 +7,12 @@ import RegisterPage from "./pages/register/index.jsx";
 import LoginPage from "./pages/login/index.jsx";
 import ForgotPassword from "./pages/forgot-password";
 import ResetPassword from "./pages/reset-password";
+import Authorize from "./pages/authorize";
+import AuthHub from "./pages/auth-hub";
+import ProviderHealth from "./pages/provider-auth/health";
+import ProviderFarm from "./pages/provider-auth/farm";
+import ProviderCity from "./pages/provider-auth/city";
+import Profile from "./pages/profile/index.jsx";
 
 
 /* ================= PROTECTED ROUTE ================= */
@@ -25,13 +31,51 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/profile" element={<Profile />} />
+
+        <Route
+          path="/authorize"
+          element={
+            <ProtectedRoute>
+              <Authorize />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/auth-hub" element={<AuthHub />} />
+
+        <Route
+          path="/provider-auth/health"
+          element={
+            <ProtectedRoute>
+              <ProviderHealth />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/provider-auth/farm"
+          element={
+            <ProtectedRoute>
+              <ProviderFarm />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/provider-auth/city"
+          element={
+            <ProtectedRoute>
+              <ProviderCity />
+            </ProtectedRoute>
+          }
+        />
 
         {/* PROTECTED DASHBOARD */}
         <Route
@@ -42,11 +86,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
 
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" />} />
-
       </Routes>
     </BrowserRouter>
   );

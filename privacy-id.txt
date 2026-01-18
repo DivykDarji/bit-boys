@@ -1055,3 +1055,11 @@ C) /authorize consent page logic
 D) Full flow diagram with routes
 
 Reply with A, B, C, or D.
+
+
+
+add feilds for health card then health only farmer then farmenr and city then city
+
+also 
+
+if not verfieid then in auth it should show face not verified make sure you verify it first and then it shild authorize

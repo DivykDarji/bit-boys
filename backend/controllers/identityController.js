@@ -5,6 +5,8 @@ const crypto = require("crypto");
 const mailService = require("../services/mailService");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authSessions = new Map();
+
 
 exports.sendOTP = async (req, res) => {
   const { name, email, gender, password } = req.body;
@@ -269,28 +271,237 @@ exports.resetPassword = async (req, res) => {
   });
 };
 
-exports.getWallet = async (req, res) => {
-  const user = await User.findById(req.user.userId);
+// ================= WALLET =================
 
-  // HARD SAFETY GUARD
+exports.getWallet = async (req, res) => {
+
+  const user = await User.findById(req.user.userId);
   const profile = user.profile || {};
 
+  const profileCompleted =
+    profile.health?.bloodGroup ||
+    profile.farm?.farmerId ||
+    profile.city?.address;
+
   res.json({
+
+    profileCompleted: !!profileCompleted,
+
     health: {
-      linked: !!profile.healthId,
-      verified: profile.healthVerified || false,
-      source: profile.healthSource || null,
+      linked: !!profile.health?.bloodGroup,
+      verified: profile.health?.verified || false
     },
+
     farm: {
-      linked: !!profile.farmerId,
-      verified: profile.farmerVerified || false,
-      source: profile.farmerSource || null,
+      linked: !!profile.farm?.farmerId,
+      verified: profile.farm?.verified || false
     },
+
     city: {
-      linked: !!profile.address,
-      verified: profile.cityVerified || false,
-      source: profile.citySource || null,
-    },
-    trustLevel: user.trustLevel || "Basic",
+      linked: !!profile.city?.address,
+      verified: profile.city?.verified || false
+    }
+
   });
+};
+
+
+
+// ====================================================
+// ============ SIGN IN WITH PEHCHAAN =================
+// ====================================================
+
+// STEP 1 — START AUTHORIZATION
+
+exports.startAuthorization = async (req, res) => {
+  const { scope, redirectUri } = req.query;
+
+  const token = crypto.randomBytes(20).toString("hex");
+
+  authSessions.set(token, {
+    userId: req.user.userId,
+    scope,
+    redirectUri,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+
+  res.json({
+    authToken: token,
+    scope,
+  });
+};
+
+// STEP 2 — CONSENT + FACE VERIFY
+
+exports.approveAuthorization = async (req, res) => {
+
+  const { authToken, imageBase64 } = req.body;
+
+  const session = authSessions.get(authToken);
+
+  if (!session || session.expiresAt < Date.now()) {
+    return res.status(400).json({ message: "Session expired" });
+  }
+
+  const user = await User.findById(session.userId);
+
+  const result = await biometric.verifyFace(
+    user.faceEmbedding,
+    imageBase64
+  );
+
+  if (!result.match) {
+    return res.status(401).json({ message: "Face failed" });
+  }
+
+  // ✅ MARK VERIFIED BASED ON SCOPE
+
+  if (session.scope === "health") {
+    user.profile.health.verified = true;
+  }
+
+  if (session.scope === "farm") {
+    user.profile.farm.verified = true;
+  }
+
+  if (session.scope === "city") {
+    user.profile.city.verified = true;
+  }
+
+  // Upgrade trust level
+  user.trustLevel = "Verified";
+
+  await user.save();
+
+  const accessToken = jwt.sign(
+    {
+      userId: user._id,
+      scope: session.scope,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "10m" }
+  );
+
+  authSessions.delete(authToken);
+
+  res.json({
+    redirect: `${session.redirectUri}?token=${accessToken}`,
+  });
+};
+
+
+// STEP 3 — SCOPED DATA
+
+exports.getAuthorizedProfile = async (req, res) => {
+
+  const { userId, scope } = req.user;
+
+  const user = await User.findById(userId);
+  const profile = user.profile || {};
+
+  // HEALTH
+  if (scope === "health") {
+
+    if (!profile.health?.verified) {
+      return res.status(403).json({
+        message: "Health not verified"
+      });
+    }
+
+    return res.json({
+      bloodGroup: profile.health.bloodGroup,
+      emergencyContact: profile.health.emergencyContact,
+      verified: true,
+    });
+  }
+
+  // FARM
+  if (scope === "farm") {
+
+    if (!profile.farm?.verified) {
+      return res.status(403).json({
+        message: "Farm not verified"
+      });
+    }
+
+    return res.json({
+      farmerId: profile.farm.farmerId,
+      landId: profile.farm.landId,
+      verified: true,
+    });
+  }
+
+  // CITY
+  if (scope === "city") {
+
+    if (!profile.city?.verified) {
+      return res.status(403).json({
+        message: "City not verified"
+      });
+    }
+
+    return res.json({
+      address: profile.city.address,
+      cityId: profile.city.cityId,
+      verified: true,
+    });
+  }
+
+  res.status(403).json({ message: "Invalid scope" });
+};
+
+
+// ================= SAVE USER PROFILE =================
+
+exports.saveProfile = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(req.user.userId);
+
+    const { health, farm, city } = req.body;
+
+    user.profile = {
+      health: {
+        ...health,
+        verified: false
+      },
+      farm: {
+        ...farm,
+        verified: false
+      },
+      city: {
+        ...city,
+        verified: false
+      }
+    };
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Profile saved successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Profile save failed" });
+  }
+
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+
+    const user = await User.findById(req.user.userId);
+
+    res.json({
+      profile: user.profile || {},
+      trustLevel: user.trustLevel
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to load profile" });
+  }
 };

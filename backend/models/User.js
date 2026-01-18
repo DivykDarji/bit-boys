@@ -18,10 +18,27 @@ const UserSchema = new mongoose.Schema({
   phone: String,
 
   profile: {
-    healthId: String,
-    farmerId: String,
-    address: String,
+
+  health: {
+    bloodGroup: String,
+    emergencyContact: String,
+    verified: { type: Boolean, default: false }
   },
+
+  farm: {
+    farmerId: String,
+    landId: String,
+    verified: { type: Boolean, default: false }
+  },
+
+  city: {
+    address: String,
+    cityId: String,
+    verified: { type: Boolean, default: false }
+  }
+
+},
+
 
   faceEmbedding: {
     type: [Number],

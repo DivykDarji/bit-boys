@@ -1,4 +1,4 @@
-export const styles = {
+export const cityStyles = {
   /* ================= BODY ================= */
   body: {
     fontFamily:
@@ -162,6 +162,26 @@ export const styles = {
     boxShadow: "0 4px 12px rgba(138,154,91,.3)",
   },
 
+  secondaryBtn: {
+    padding: "16px 40px",
+    backgroundColor: "transparent",
+    color: "#8a9a5b",
+    border: "2px solid #8a9a5b",
+    borderRadius: "10px",
+    fontWeight: 700,
+    cursor: "pointer",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    fontSize: "16px",
+    outline: "none",
+  },
+
+  secondaryBtnHover: {
+    backgroundColor: "#8a9a5b",
+    color: "#fff",
+    boxShadow: "0 8px 25px rgba(138,154,91,.3)",
+    transform: "translateY(-2px)",
+  },
+
   heroImage: {
     flex: 1,
     display: "flex",
@@ -173,8 +193,7 @@ export const styles = {
   illustrationHero: {
     width: "650px",
     height: "650px",
-    backgroundImage:
-      'url("https://i.ibb.co/LzMv3nB2/ilust.png")',
+    backgroundImage: 'url("https://i.ibb.co/LzMv3nB2/ilust.png")',
     backgroundSize: "cover",
     backgroundPosition: "center",
     borderRadius: "28px",
@@ -243,6 +262,7 @@ export const styles = {
   featureIcon: {
     marginBottom: 20,
     transition: "all 0.3s ease",
+    fontSize: "48px",
   },
 
   featureIconHover: {
@@ -261,6 +281,8 @@ export const styles = {
     color: "#5a5a5a",
     marginBottom: 20,
     transition: "color 0.3s ease",
+    fontSize: "16px",
+    lineHeight: "1.6",
   },
 
   featureBullet: {
@@ -313,6 +335,7 @@ export const styles = {
     display: "flex",
     justifyContent: "center",
     transition: "all 0.3s ease",
+    fontSize: "56px",
   },
 
   appIconHover: {
@@ -336,6 +359,190 @@ export const styles = {
     fontSize: 16,
     lineHeight: 1.6,
     transition: "color 0.3s ease",
+    marginBottom: 20,
+  },
+
+  /* ================= CITY PROVIDER SECTION ================= */
+  cityHeroSection: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "100px 80px",
+    background: "linear-gradient(135deg, #faf9f7 0%, #f0e8e0 100%)",
+    minHeight: "90vh",
+    gap: "80px",
+    transition: "all 0.6s ease",
+  },
+
+  cityContent: {
+    flex: 1,
+    maxWidth: "600px",
+  },
+
+  cityBadge: {
+    backgroundColor: "rgba(138,154,91,0.18)",
+    color: "#8a9a5b",
+    padding: "10px 20px",
+    borderRadius: "24px",
+    fontSize: "12px",
+    fontWeight: 700,
+    marginBottom: 24,
+    letterSpacing: "0.6px",
+    textTransform: "uppercase",
+    border: "1px solid rgba(138,154,91,0.35)",
+    display: "inline-block",
+    transition: "all 0.3s ease",
+  },
+
+  cityTitle: {
+    fontSize: "48px",
+    fontWeight: 800,
+    lineHeight: 1.2,
+    marginBottom: 24,
+    color: "#3d3d3d",
+    transition: "color 0.3s ease",
+  },
+
+  citySubtitle: {
+    fontSize: "18px",
+    color: "#5a5a5a",
+    marginBottom: 32,
+    lineHeight: 1.8,
+    transition: "color 0.3s ease",
+  },
+
+  cityDescription: {
+    fontSize: "16px",
+    color: "#5a5a5a",
+    marginBottom: 24,
+    lineHeight: 1.8,
+    transition: "color 0.3s ease",
+  },
+
+  cityBenefits: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    marginBottom: 32,
+  },
+
+  benefitItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "12px 0",
+    transition: "all 0.3s ease",
+  },
+
+  benefitIcon: {
+    width: "24px",
+    height: "24px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(138,154,91,0.2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#8a9a5b",
+    fontWeight: "bold",
+    fontSize: "14px",
+  },
+
+  benefitText: {
+    fontSize: "16px",
+    color: "#3d3d3d",
+    fontWeight: "500",
+  },
+
+  cityButtons: {
+    display: "flex",
+    gap: 16,
+    flexWrap: "wrap",
+  },
+
+  cityImage: {
+    flex: 1,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  cityIllustration: {
+    width: "100%",
+    height: "500px",
+    backgroundColor: "rgba(138,154,91,0.08)",
+    borderRadius: "20px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "2px solid rgba(138,154,91,0.15)",
+    transition: "all 0.3s ease",
+    backgroundImage: "linear-gradient(135deg, rgba(138,154,91,0.1) 0%, rgba(212,197,169,0.1) 100%)",
+  },
+
+  /* ================= VERIFICATION STEPS ================= */
+  stepsSection: {
+    padding: "100px 80px",
+    backgroundColor: "#ffffff",
+  },
+
+  stepContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: 40,
+    maxWidth: 1200,
+    marginInline: "auto",
+  },
+
+  stepCard: {
+    padding: "40px 32px",
+    backgroundColor: "#faf9f7",
+    borderRadius: 16,
+    border: "1px solid #e8ddc8",
+    textAlign: "center",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    position: "relative",
+  },
+
+  stepCardHover: {
+    backgroundColor: "#ffffff",
+    boxShadow: "0 12px 40px rgba(138,154,91,0.12)",
+    transform: "translateY(-4px)",
+    borderColor: "rgba(138,154,91,0.3)",
+  },
+
+  stepNumber: {
+    width: "60px",
+    height: "60px",
+    borderRadius: "50%",
+    backgroundColor: "#8a9a5b",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "28px",
+    fontWeight: 800,
+    marginBottom: 20,
+    marginInline: "auto",
+    transition: "all 0.3s ease",
+  },
+
+  stepNumberHover: {
+    backgroundColor: "#778850",
+    transform: "scale(1.1)",
+    boxShadow: "0 8px 20px rgba(138,154,91,0.3)",
+  },
+
+  stepTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    marginBottom: 12,
+    color: "#3d3d3d",
+  },
+
+  stepDescription: {
+    fontSize: 16,
+    color: "#5a5a5a",
+    lineHeight: 1.6,
   },
 
   /* ================= FOOTER ================= */
@@ -357,7 +564,7 @@ export const styles = {
 
   footerLogo: {
     color: "#e6c84c",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 700,
     cursor: "pointer",
     transition: "all 0.3s ease",
@@ -396,6 +603,13 @@ export const styles = {
     gridColumn: "1 / -1",
   },
 
+  /* ================= CONTAINER ================= */
+  container: {
+    maxWidth: 1200,
+    marginInline: "auto",
+    paddingInline: 20,
+  },
+
   /* ================= RESPONSIVE ================= */
   "@media (max-width: 768px)": {
     hero: {
@@ -420,6 +634,20 @@ export const styles = {
       gridTemplateColumns: "1fr",
       gap: 30,
     },
+    cityHeroSection: {
+      padding: "60px 40px",
+      flexDirection: "column",
+      gap: "40px",
+    },
+    cityTitle: {
+      fontSize: "36px",
+    },
+    cityIllustration: {
+      height: "300px",
+    },
+    stepsSection: {
+      padding: "60px 40px",
+    },
   },
 
   "@media (max-width: 480px)": {
@@ -440,6 +668,27 @@ export const styles = {
     },
     navbar: {
       padding: "15px 20px",
+    },
+    cityHeroSection: {
+      padding: "40px 20px",
+    },
+    cityTitle: {
+      fontSize: "28px",
+    },
+    cityButtons: {
+      flexDirection: "column",
+    },
+    primaryBtn: {
+      width: "100%",
+    },
+    secondaryBtn: {
+      width: "100%",
+    },
+    stepsSection: {
+      padding: "40px 20px",
+    },
+    stepContainer: {
+      gap: 20,
     },
   },
 };

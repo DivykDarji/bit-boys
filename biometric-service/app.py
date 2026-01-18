@@ -37,68 +37,64 @@ def enroll_face():
     if not files or len(files) != 3:
         return jsonify({"success": False, "message": "Exactly 3 images required"}), 400
 
+    # ---------------- SAFE FOLDER NAME ----------------
+
     safe_name = re.sub(r'[^a-zA-Z0-9]', '_', username.lower())
+
     today = datetime.now().strftime("%Y_%m_%d")
+
     folder_name = f"{safe_name}_{today}"
 
     user_folder = os.path.join(BASE_DIR, folder_name)
 
-    # Only block if REAL enrollment already exists
+    # Prevent duplicate enrollment
     if os.path.exists(user_folder):
         return jsonify({
             "success": False,
             "message": "Face already enrolled"
         }), 400
 
+    os.makedirs(user_folder, exist_ok=True)
+
     embeddings = []
-    temp_images = []
+    image_paths = []
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # -------- FIRST VALIDATE ALL IMAGES --------
+    # ---------------- PROCESS FILES ----------------
 
     for idx, file in enumerate(files, start=1):
 
-        temp_path = f"temp_{timestamp}_{idx}.jpg"
-        file.save(temp_path)
+        filename = f"face_{timestamp}_{idx}.jpg"
 
-        img = cv2.imread(temp_path)
+        img_path = os.path.join(user_folder, filename)
+
+        file.save(img_path)
+
+        img = cv2.imread(img_path)
 
         if img is None:
-            os.remove(temp_path)
             return jsonify({"success": False, "message": "Invalid image file"}), 400
 
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         faces, prob = mtcnn(img_rgb, return_prob=True)
 
+        # Quality check
         if faces is None or prob is None or prob < 0.90:
-            os.remove(temp_path)
             return jsonify({
                 "success": False,
-                "message": "Face not detected properly. Improve lighting and face position."
+                "message": "Low quality or invalid face detected"
             }), 400
 
         embedding = facenet(faces.unsqueeze(0))
         embedding = embedding.detach().numpy().flatten()
 
         embeddings.append(embedding)
-        temp_images.append(temp_path)
 
-    # -------- CREATE USER FOLDER ONLY AFTER SUCCESS --------
+        # Save RELATIVE PATH for MongoDB
+        relative_path = img_path.replace(BASE_DIR, "").replace("\\", "/")
 
-    os.makedirs(user_folder, exist_ok=True)
-
-    image_paths = []
-
-    for idx, temp_img in enumerate(temp_images, start=1):
-
-        final_name = f"face_{timestamp}_{idx}.jpg"
-        final_path = os.path.join(user_folder, final_name)
-
-        os.rename(temp_img, final_path)
-
-        relative_path = final_path.replace(BASE_DIR, "").replace("\\", "/")
         image_paths.append(relative_path)
 
     final_embedding = np.mean(embeddings, axis=0)
@@ -108,7 +104,6 @@ def enroll_face():
         "embedding": final_embedding.tolist(),
         "imagePaths": image_paths
     })
-
 
 
 # ================= VERIFY =================

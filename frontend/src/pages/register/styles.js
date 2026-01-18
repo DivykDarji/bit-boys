@@ -67,6 +67,81 @@ export const styles = {
     outline: "none",
   },
 
+  /* ================= SELECT DROPDOWN ================= */
+
+  selectWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+
+  selectInput: {
+    height: "46px",
+    padding: "0 16px",
+    borderRadius: "10px",
+    border: "1px solid #e8ddc8",
+    background: "#faf9f7",
+    fontSize: "0.95rem",
+    outline: "none",
+    appearance: "none",
+    width: "100%",
+    cursor: "pointer",
+    paddingRight: "30px",
+    color: "#3d3d3d",
+    fontFamily: "inherit",
+  },
+
+  selectArrow: {
+    position: "absolute",
+    right: "12px",
+    color: "#8a9a5b",
+    fontSize: "12px",
+    pointerEvents: "none",
+  },
+
+  /* ================= PASSWORD FIELD WITH EYE ICON ================= */
+
+  passwordWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+
+  passwordInput: {
+    height: "46px",
+    padding: "0 16px",
+    paddingRight: "40px",
+    borderRadius: "10px",
+    border: "1px solid #e8ddc8",
+    background: "#faf9f7",
+    fontSize: "0.95rem",
+    outline: "none",
+    width: "100%",
+    fontFamily: "inherit",
+  },
+
+  eyeButton: {
+    position: "absolute",
+    right: "12px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    outline: "none",
+    color: "#8a9a5b",
+  },
+
+  eyeIcon: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  /* ================= BUTTONS ================= */
+
   submitBtn: {
     height: "48px",
     background: "#8a9a5b",
@@ -119,3 +194,4 @@ export const styles = {
     cursor: "pointer",
   },
 };
+
