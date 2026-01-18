@@ -33,43 +33,55 @@ const CityIcon = () => (
 /* ================= COMPONENT ================= */
 
 const AuthHub = () => {
+
   const params = new URLSearchParams(window.location.search);
   const incomingScope = params.get("scope");
 
-  const redirectUri = encodeURIComponent("http://localhost:3000/callback");
+  // IMPORTANT: Redirect directly to external portal root
+  const redirectUri = encodeURIComponent("http://localhost:3000");
 
   const launchExternalApp = (selectedScope) => {
-    // If portal already sent scope → lock it
-    // If not → use user selected service
+
+    // Lock scope if coming from portal
     const finalScope = incomingScope || selectedScope;
 
     if (!finalScope) {
       alert("Please select a service to continue");
       return;
     }
-    const clientId = "CityCare"; // example portal name
 
-    window.location.href = `http://localhost:5173/authorize?scope=${finalScope}&redirectUri=${redirectUri}&clientId=${clientId}`;
+    const clientId = "CityCare"; // External portal name
 
+    const authUrl =
+      `http://localhost:5173/authorize` +
+      `?scope=${finalScope}` +
+      `&redirectUri=${redirectUri}` +
+      `&clientId=${clientId}`;
+
+    window.location.href = authUrl;
   };
 
   return (
     <div style={hubStyles.page}>
       <div style={hubStyles.card}>
+
+        {/* LOGO */}
         <div style={hubStyles.logoContainer}>
           <h1 style={hubStyles.logo}>Pehchaan</h1>
           <p style={hubStyles.logoSubtitle}>Identity Gateway</p>
         </div>
 
+        {/* TITLE */}
         <p style={hubStyles.headline}>
           {incomingScope
             ? `Continue to ${incomingScope.toUpperCase()} Portal`
             : "Choose a service to continue"}
         </p>
 
+        {/* BUTTONS */}
         <div style={hubStyles.buttonContainer}>
-          {/* HEALTH */}
 
+          {/* HEALTH */}
           {(!incomingScope || incomingScope === "health") && (
             <button
               style={hubStyles.button}
@@ -77,13 +89,7 @@ const AuthHub = () => {
                 Object.assign(e.target.style, hubStyles.buttonHover)
               }
               onMouseLeave={(e) =>
-                Object.assign(e.target.style, {
-                  backgroundColor: "#faf9f7",
-                  borderColor: "#e8ddc8",
-                  color: "#3d3d3d",
-                  transform: "none",
-                  boxShadow: "none",
-                })
+                Object.assign(e.target.style, hubStyles.buttonReset)
               }
               onClick={() => launchExternalApp("health")}
             >
@@ -95,7 +101,6 @@ const AuthHub = () => {
           )}
 
           {/* FARM */}
-
           {(!incomingScope || incomingScope === "farm") && (
             <button
               style={hubStyles.button}
@@ -103,13 +108,7 @@ const AuthHub = () => {
                 Object.assign(e.target.style, hubStyles.buttonHover)
               }
               onMouseLeave={(e) =>
-                Object.assign(e.target.style, {
-                  backgroundColor: "#faf9f7",
-                  borderColor: "#e8ddc8",
-                  color: "#3d3d3d",
-                  transform: "none",
-                  boxShadow: "none",
-                })
+                Object.assign(e.target.style, hubStyles.buttonReset)
               }
               onClick={() => launchExternalApp("farm")}
             >
@@ -121,7 +120,6 @@ const AuthHub = () => {
           )}
 
           {/* CITY */}
-
           {(!incomingScope || incomingScope === "city") && (
             <button
               style={hubStyles.button}
@@ -129,13 +127,7 @@ const AuthHub = () => {
                 Object.assign(e.target.style, hubStyles.buttonHover)
               }
               onMouseLeave={(e) =>
-                Object.assign(e.target.style, {
-                  backgroundColor: "#faf9f7",
-                  borderColor: "#e8ddc8",
-                  color: "#3d3d3d",
-                  transform: "none",
-                  boxShadow: "none",
-                })
+                Object.assign(e.target.style, hubStyles.buttonReset)
               }
               onClick={() => launchExternalApp("city")}
             >
@@ -145,13 +137,16 @@ const AuthHub = () => {
               City Portal
             </button>
           )}
+
         </div>
 
+        {/* FOOTER */}
         <div style={hubStyles.footer}>
           <p style={hubStyles.footerText}>
             Secure identity verification powered by Pehchaan
           </p>
         </div>
+
       </div>
     </div>
   );

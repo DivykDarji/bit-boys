@@ -317,7 +317,6 @@ exports.getWallet = async (req, res) => {
 exports.startAuthorization = async (req, res) => {
   const { scope, redirectUri, clientId } = req.query;
 
-
   const token = crypto.randomBytes(20).toString("hex");
 
   authSessions.set(token, {
@@ -342,7 +341,11 @@ exports.approveAuthorization = async (req, res) => {
 
     const { authToken, frames } = req.body;
 
+    console.log("AUTH TOKEN:", authToken);
+
     const session = authSessions.get(authToken);
+
+    console.log("SESSION EXISTS:", !!session);
 
     if (!session || session.expiresAt < Date.now()) {
       return res.status(400).json({ message: "Session expired" });
@@ -350,53 +353,44 @@ exports.approveAuthorization = async (req, res) => {
 
     const user = await User.findById(session.userId);
 
-    if (!user || !user.faceEnrolled) {
-      return res.status(400).json({ message: "User not face enrolled" });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
 
-    // ✅ Multi-frame biometric verification
-    const result = await biometric.verifyFace(
-      user.faceEmbedding,
-      frames
-    );
+    // Only verify if frames provided
+    if (frames && frames.length > 0) {
 
-    if (!result.success) {
-      return res.status(401).json({ message: "Face verification failed" });
+      const result = await biometric.verifyFace(
+        user.faceEmbedding,
+        frames
+      );
+
+      if (!result.success) {
+        return res.status(401).json({ message: "Face verification failed" });
+      }
+
     }
 
-    // ✅ MARK VERIFIED BASED ON SCOPE
+    // Mark verified
+    if (session.scope === "health") user.profile.health.verified = true;
+    if (session.scope === "farm") user.profile.farm.verified = true;
+    if (session.scope === "city") user.profile.city.verified = true;
 
-    if (session.scope === "health") {
-      user.profile.health.verified = true;
-    }
-
-    if (session.scope === "farm") {
-      user.profile.farm.verified = true;
-    }
-
-    if (session.scope === "city") {
-      user.profile.city.verified = true;
-    }
-
-    // Upgrade trust level
     user.trustLevel = "Verified";
 
     await user.save();
 
     const accessToken = jwt.sign(
-      {
-        userId: user._id,
-        scope: session.scope,
-      },
+      { userId: user._id, scope: session.scope },
       process.env.JWT_SECRET,
-      { expiresIn: "10m" },
+      { expiresIn: "10m" }
     );
-
-    authSessions.delete(authToken);
 
     res.json({
       redirect: `${session.redirectUri}?token=${accessToken}`,
     });
+
+    authSessions.delete(authToken);
 
   } catch (err) {
     console.error("Authorization approve error:", err);
@@ -404,83 +398,69 @@ exports.approveAuthorization = async (req, res) => {
   }
 };
 
-
 // STEP 3 — SCOPED DATA
 
 exports.getAuthorizedProfile = async (req, res) => {
   const { userId, scope } = req.user;
 
   const user = await User.findById(userId);
+
   const consent = await Consent.findOne({
     userId,
-    allowedScopes: scope,
+    allowedScopes: { $in: [scope] },
     status: "active",
   });
 
   if (!consent) {
-    return res.status(403).json({
-      message: "Access not granted",
-    });
+    return res.status(403).json({ message: "Access revoked" });
   }
 
-  // Check expiry
+  // Expiry check
   if (consent.expiryTime && consent.expiryTime < new Date()) {
     consent.status = "revoked";
     await consent.save();
-
-    return res.status(403).json({
-      message: "Access expired",
-    });
+    return res.status(403).json({ message: "Access expired" });
   }
 
-  const profile = user.profile || {};
+  let data = {};
 
-  // HEALTH
   if (scope === "health") {
-    if (!profile.health?.verified) {
-      return res.status(403).json({
-        message: "Health not verified",
-      });
+    if (!user.profile.health?.verified) {
+      return res.status(403).json({ message: "Health not verified" });
     }
 
-    return res.json({
-      bloodGroup: profile.health.bloodGroup,
-      emergencyContact: profile.health.emergencyContact,
-      verified: true,
-    });
+    data = {
+      bloodGroup: user.profile.health.bloodGroup,
+      emergencyContact: user.profile.health.emergencyContact,
+    };
   }
 
-  // FARM
   if (scope === "farm") {
-    if (!profile.farm?.verified) {
-      return res.status(403).json({
-        message: "Farm not verified",
-      });
+    if (!user.profile.farm?.verified) {
+      return res.status(403).json({ message: "Farm not verified" });
     }
 
-    return res.json({
-      farmerId: profile.farm.farmerId,
-      landId: profile.farm.landId,
-      verified: true,
-    });
+    data = {
+      farmerId: user.profile.farm.farmerId,
+      landId: user.profile.farm.landId,
+    };
   }
 
-  // CITY
   if (scope === "city") {
-    if (!profile.city?.verified) {
-      return res.status(403).json({
-        message: "City not verified",
-      });
+    if (!user.profile.city?.verified) {
+      return res.status(403).json({ message: "City not verified" });
     }
 
-    return res.json({
-      address: profile.city.address,
-      cityId: profile.city.cityId,
-      verified: true,
-    });
+    data = {
+      address: user.profile.city.address,
+      cityId: user.profile.city.cityId,
+    };
   }
 
-  res.status(403).json({ message: "Invalid scope" });
+  res.json({
+    scope,
+    data,
+  });
 };
 
 // ================= SAVE USER PROFILE =================
@@ -552,6 +532,10 @@ exports.saveConsent = async (req, res) => {
       expiryTime = new Date(Date.now() + customMinutes * 60 * 1000);
     }
 
+    if (duration === "forever") {
+      expiryTime = null; // unlimited until revoke
+    }
+
     // Save consent record
     const consent = await Consent.create({
       userId: session.userId,
@@ -605,9 +589,7 @@ exports.revokeConsent = async (req, res) => {
 // ================= INTERNAL VERIFICATION =================
 
 exports.internalVerify = async (req, res) => {
-
   try {
-
     const { frames, scope } = req.body;
 
     const user = await User.findById(req.user.userId);
@@ -616,13 +598,15 @@ exports.internalVerify = async (req, res) => {
       return res.status(400).json({ success: false });
     }
 
-    const result = await biometric.verifyFace(
-      user.faceEmbedding,
-      frames
-    );
+    let verified = true;
 
-    if (!result.success) {
-      return res.status(401).json({ success: false });
+    // Only verify if frames exist
+    if (frames && frames.length > 0) {
+      const result = await biometric.verifyFace(user.faceEmbedding, frames);
+
+      if (!result.success) {
+        return res.status(401).json({ message: "Face verification failed" });
+      }
     }
 
     // Mark verified
@@ -635,13 +619,11 @@ exports.internalVerify = async (req, res) => {
     await user.save();
 
     res.json({ success: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
   }
 };
-
 
 exports.deleteIdentity = async (req, res) => {
   try {
@@ -656,7 +638,7 @@ exports.deleteIdentity = async (req, res) => {
     // 1️⃣ Revoke consents
     await Consent.updateMany(
       { userId, status: "active" },
-      { status: "revoked" }
+      { status: "revoked" },
     );
 
     // 2️⃣ Correct biometric storage base path
@@ -665,7 +647,6 @@ exports.deleteIdentity = async (req, res) => {
     // 3️⃣ Delete face images
     if (user.faceImages?.length) {
       user.faceImages.forEach((relativePath) => {
-
         const cleanPath = relativePath.replace(/^\/+/, "");
 
         const fullPath = path.join(BASE_STORAGE, cleanPath);
@@ -673,13 +654,10 @@ exports.deleteIdentity = async (req, res) => {
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
         }
-
       });
 
       // 4️⃣ Delete entire user folder
-      const folderName = user.faceImages[0]
-        .replace(/^\/+/, "")
-        .split("/")[0];
+      const folderName = user.faceImages[0].replace(/^\/+/, "").split("/")[0];
 
       const userFolder = path.join(BASE_STORAGE, folderName);
 
@@ -695,7 +673,6 @@ exports.deleteIdentity = async (req, res) => {
       success: true,
       message: "Identity permanently deleted",
     });
-
   } catch (err) {
     console.error("Delete identity error:", err);
     res.status(500).json({
@@ -704,4 +681,3 @@ exports.deleteIdentity = async (req, res) => {
     });
   }
 };
-

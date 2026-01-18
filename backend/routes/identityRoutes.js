@@ -31,7 +31,6 @@ router.post("/consent/revoke", verify, ctrl.revokeConsent);
 
 router.get("/authorize", verify, ctrl.startAuthorization);
 
-router.post("/authorize/approve", verify, ctrl.approveAuthorization);
 
 router.get("/authorize/profile", verify, ctrl.getAuthorizedProfile);
 

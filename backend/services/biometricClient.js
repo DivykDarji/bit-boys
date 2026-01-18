@@ -6,40 +6,22 @@ const BIOMETRIC_URL = process.env.BIOMETRIC_URL;
 
 exports.enrollFace = async (userId, name, files) => {
 
-  try {
+  const form = new FormData();
 
-    const form = new FormData();
+  form.append("userId", userId);
+  form.append("username", name);
 
-    form.append("userId", userId);
-    form.append("username", name);
+  files.forEach(file => {
+    form.append("images", fs.createReadStream(file.path));
+  });
 
-    files.forEach(file => {
-      form.append("images", fs.createReadStream(file.path));
-    });
+  const response = await axios.post(
+    `${BIOMETRIC_URL}/enroll-face`,
+    form,
+    { headers: form.getHeaders(), timeout: 20000 }
+  );
 
-    const response = await axios.post(
-      `${BIOMETRIC_URL}/enroll-face`,
-      form,
-      { headers: form.getHeaders() }
-    );
-
-    return response.data;
-
-  } catch (error) {
-
-    // 👉 Extract Flask error message safely
-    if (error.response && error.response.data) {
-      throw {
-        status: error.response.status,
-        message: error.response.data.message || "Biometric service error"
-      };
-    }
-
-    throw {
-      status: 500,
-      message: "Biometric service unreachable"
-    };
-  }
+  return response.data;
 };
 
 
@@ -50,11 +32,9 @@ exports.verifyFace = async (embedding, frames) => {
 
     const response = await axios.post(
       `${BIOMETRIC_URL}/verify-face`,
+      { embedding, frames },
       {
-        embedding,
-        frames
-      },
-      {
+        timeout: 20000,
         maxContentLength: Infinity,
         maxBodyLength: Infinity
       }
@@ -69,9 +49,8 @@ exports.verifyFace = async (embedding, frames) => {
     );
 
     throw {
-      status: 500,
-      message: "Face verification failed"
+      status: error.response?.status || 500,
+      message: error.response?.data?.message || "Biometric failed"
     };
   }
 };
-

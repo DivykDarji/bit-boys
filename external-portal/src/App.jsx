@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
+import "./index.css";
 
 const App = () => {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
-
-  // ================= HANDLE REDIRECT TOKEN =================
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -22,78 +21,85 @@ const App = () => {
           const err = await res.json();
           throw new Error(err.message || "Authorization failed");
         }
-
         return res.json();
       })
-      .then((data) => {
-        setProfile(data);
-      })
-      .catch((err) => {
-        setError(err.message);
-      });
+      .then((data) => setProfile(data))
+      .catch((err) => setError(err.message));
   }, []);
 
-  // ================= LOGIN MODES =================
-
-  // Authorization mode (scope forced)
   const loginWithScope = (scope) => {
-    window.location.href = `http://localhost:5173/auth-hub?scope=${scope}&redirectUri=http://localhost:3000`;
+    window.location.href = `http://localhost:5173/auth-hub?scope=${scope}&clientId=bitboys&redirectUri=http://localhost:3000`;
   };
 
-  // Identity login mode (no scope)
   const loginGeneric = () => {
     window.location.href = "http://localhost:5173/auth-hub";
   };
 
-  // ================= UI =================
-
   return (
-    <div style={{ padding: 40 }}>
-      {!profile && (
-        <>
-          <h2>External Portal</h2>
+    <div className="page">
+      {/* HEADER */}
+      <header className="topbar">
+        <span className="portal-title">EXTERNAL PORTAL | BIT BOYS</span>
+      </header>
 
-          {/* GENERIC LOGIN (NO SCOPE) */}
+      {/* MAIN */}
+      <main className="container">
+        {!profile && (
+          <>
+            <h1>Identity Authorization</h1>
 
-          <button onClick={loginGeneric}>Sign in with Pehchaan</button>
+            <p className="subtitle">
+              Secure, consent-based access using Pehchaan Digital Identity
+            </p>
 
-          <br />
-          <br />
+            <div className="card">
+              <button className="primary" onClick={loginGeneric}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2v20M2 12h20" />
+                </svg>
+                Sign in with Pehchaan
+              </button>
 
-          <hr />
+              <div className="divider" />
 
-          <p>Or authorize specific service:</p>
+              <button onClick={() => loginWithScope("health")}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M20.8 4.6c-1.6-1.5-4.1-1.5-5.7 0L12 7.5l-3.1-2.9c-1.6-1.5-4.1-1.5-5.7 0-1.8 1.7-1.8 4.5 0 6.2l8.8 8.3 8.8-8.3c1.8-1.7 1.8-4.5 0-6.2z" />
+                </svg>
+                Health Authorization
+              </button>
 
-          {/* SCOPED LOGIN */}
+              <button onClick={() => loginWithScope("farm")}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 12l8-8 8 8M5 10v10h14V10" />
+                </svg>
+                Agriculture Authorization
+              </button>
 
-          <button onClick={() => loginWithScope("health")}>
-            Sign in with Health Portal
-          </button>
+              <button onClick={() => loginWithScope("city")}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M3 21V3h18v18" />
+                </svg>
+                Smart City Authorization
+              </button>
 
-          <br />
-          <br />
+              {error && <p className="error">{error}</p>}
+            </div>
+          </>
+        )}
 
-          <button onClick={() => loginWithScope("farm")}>
-            Sign in with Farmer Portal
-          </button>
+        {profile && (
+          <>
+            <h1 style={{ color: "green" }}>✅ Access Granted</h1>
 
-          <br />
-          <br />
+            <p style={{ marginBottom: 10 }}>
+              Identity verified via Pehchaan biometric gateway
+            </p>
 
-          <button onClick={() => loginWithScope("city")}>
-            Sign in with Smart City Portal
-          </button>
-
-          {error && <p style={{ color: "red" }}>{error}</p>}
-        </>
-      )}
-
-      {profile && (
-        <>
-          <h2>Login Success</h2>
-          <pre>{JSON.stringify(profile, null, 2)}</pre>
-        </>
-      )}
+            <pre>{JSON.stringify(profile, null, 2)}</pre>
+          </>
+        )}
+      </main>
     </div>
   );
 };

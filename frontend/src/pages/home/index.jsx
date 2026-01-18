@@ -139,12 +139,23 @@ const Home = () => {
   const params = new URLSearchParams(window.location.search);
   const pendingScope = params.get("scope");
   const clientId = params.get("clientId");
+  const [verifying, setVerifying] = useState(false);
 
   const [pendingAuth, setPendingAuth] = useState(null);
 
   useEffect(() => {
-    const auth = localStorage.getItem("pendingAuth");
-    setPendingAuth(auth);
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const tokenFromUrl = urlParams.get("authToken");
+
+    const stored = localStorage.getItem("pendingAuth");
+
+    const finalToken = tokenFromUrl || stored;
+
+    if (finalToken) {
+      localStorage.setItem("pendingAuth", finalToken);
+      setPendingAuth(finalToken);
+    }
   }, []);
 
   const [duration, setDuration] = useState("10m");
@@ -307,6 +318,11 @@ const Home = () => {
                   Until revoke
                 </label>
               </div>
+              {verifying && (
+                <div style={{ marginTop: 15, fontWeight: 600, color: "#222" }}>
+                  🔍 Verifying biometric identity...
+                </div>
+              )}
 
               <button
                 style={{
@@ -320,24 +336,36 @@ const Home = () => {
                   fontWeight: 700,
                 }}
                 onClick={async () => {
-                  const token = JSON.parse(localStorage.getItem("user")).token;
+                  const userToken = JSON.parse(
+                    localStorage.getItem("user"),
+                  ).token;
 
-                  await fetch(
-                    "http://localhost:5000/api/identity/consent/save",
-                    {
-                      method: "POST",
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
+                  try {
+                    setVerifying(true);
+
+                    // Save consent ONLY
+                    await fetch(
+                      "http://localhost:5000/api/identity/consent/save",
+                      {
+                        method: "POST",
+                        headers: {
+                          Authorization: `Bearer ${userToken}`,
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          authToken: pendingAuth,
+                          duration,
+                        }),
                       },
-                      body: JSON.stringify({
-                        authToken: pendingAuth,
-                        duration,
-                      }),
-                    },
-                  );
+                    );
 
-                  navigate(`/provider-auth/${pendingScope}`);
+                    // Go to biometric verification screen
+                    window.location.href = `/provider-auth/${pendingScope}?authToken=${pendingAuth}`;
+                  } catch (err) {
+                    console.error(err);
+                    alert("Consent failed");
+                    setVerifying(false);
+                  }
                 }}
               >
                 Approve Access

@@ -1065,3 +1065,6 @@ also
 if not verfieid then in auth it should show face not verified make sure you verify it first and then it shild authorize
 
 "Our anti-spoof CNN was trained on controlled datasets, while our demo runs on webcam input. To handle domain mismatch, we apply adaptive thresholding and combine it with frontend liveness detection and multi-frame voting."
+
+
+Pehchaan is a privacy-centric digital identity platform that allows users to securely store their identity data and selectively share it with third-party services using explicit consent and biometric verification. The system follows privacy-by-design principles by minimizing data exposure, enabling permission-based access control, and providing transparent audit logs. It acts as a secure identity wallet similar to DigiLocker and Google Sign-In but with stronger user ownership and trust management.

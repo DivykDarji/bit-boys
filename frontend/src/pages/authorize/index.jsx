@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { authorizeStyles } from "./style";
 
 const Authorize = () => {
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,7 +17,6 @@ const Authorize = () => {
   // ================= BASIC VALIDATION =================
 
   useEffect(() => {
-
     if (!scope || !redirectUri || !clientId) {
       setError("Invalid authorization request");
       return;
@@ -28,15 +26,12 @@ const Authorize = () => {
       setError("Please login to Pehchaan first");
       return;
     }
-
   }, [scope, redirectUri, clientId, token]);
 
   // ================= START AUTH REQUEST =================
 
   const startConsent = async () => {
-
     try {
-
       setLoading(true);
       setError("");
 
@@ -46,7 +41,7 @@ const Authorize = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       const data = await res.json();
@@ -59,9 +54,7 @@ const Authorize = () => {
       localStorage.setItem("pendingAuth", data.authToken);
 
       // 👉 Redirect user to dashboard to approve consent
-      window.location.href =
-        `http://localhost:5173/dashboard?scope=${scope}&clientId=${clientId}`;
-
+      window.location.href = `http://localhost:5173/dashboard?scope=${scope}&clientId=${clientId}&authToken=${data.authToken}`;
     } catch (err) {
       console.error(err);
       setError(err.message || "Authorization failed");
@@ -75,14 +68,13 @@ const Authorize = () => {
   return (
     <div style={authorizeStyles.container}>
       <div style={authorizeStyles.card}>
-
         <h2 style={authorizeStyles.title}>
           Authorize {scope?.toUpperCase()} Access
         </h2>
 
         <p style={authorizeStyles.text}>
-          {clientId} is requesting access to your identity data.
-          You will review and approve this request on your dashboard.
+          {clientId} is requesting access to your identity data. You will review
+          and approve this request on your dashboard.
         </p>
 
         {!error && (
@@ -96,7 +88,6 @@ const Authorize = () => {
         )}
 
         {error && <p style={authorizeStyles.error}>{error}</p>}
-
       </div>
     </div>
   );
